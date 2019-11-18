@@ -1,0 +1,105 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Template for vpc'
+Resources:
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.9/16
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: ibex_dev_cft
+  pubsub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.1.9/24
+      Tags:
+        - Key: Name
+          Value: ibex_dev_pubsub1
+  pubsub2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.2.9/24
+      Tags:
+        - Key: Name
+          Value: ibex_dev_pubsub2
+  private:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1c
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.3.9/24
+      Tags:
+        - Key: Name
+          Value: ibex_dev_private
+  eip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref myVPC
+  nat:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt "eip.AllocationId"
+      SubnetId: !Ref pubsub1
+      Tags:
+        - Key: Name
+          Value: nat
+  igwName:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ibex_dev_igw
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref myVPC
+      InternetGatewayId: !Ref igwName
+
+  publicrt:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+        - Key: Name
+          Value: ibex_dev_public
+  privatert:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+        - Key: Name
+          Value: ibex_dev_private
+  routeTableAssocName1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref pubsub1
+      RouteTableId: !Ref publicrt
+  routeTableAssocName2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref pubsub2
+      RouteTableId: !Ref publicrt
+  routeTableAssocName1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref private
+      RouteTableId: !Ref privatert
+  igwrouteName:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref publicrt
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref igwName
+  natrouteName:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref privatert
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref nat
