@@ -1,0 +1,15 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Template for ec2'
+Resources:
+  myEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      KeyName: virgina
+      ImageId: ami-00eb20669e0990cb4
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - sg-09af114dcb1c63f20
+      Tags:
+        - Key: Name
+          Value: ec2cft
